@@ -137,7 +137,7 @@ int GLShaderProgram::compile_shader(ShaderType aShaderType,
 	default:
 		if (!m_gl_logger_file_name.empty()) {
 			gl_log_err(m_gl_logger_file_name.c_str(), "ERROR: SHADER TYPE NOT SUPPORTED!\n");
-			b_success = false;
+			b_success = 0;
 		}
 		break;
 	}
