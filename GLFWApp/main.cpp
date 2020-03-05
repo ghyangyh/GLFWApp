@@ -95,8 +95,13 @@ void processInput(GLFWwindow* pwindow) {
 	}
 }
 
-const string VERTEX_SHADER_FILE = "cube.vert";
-const string FRAGMENT_SHADER_FILE = "cube.frag";
+// Non-shaded shader sources
+//const string VERTEX_SHADER_FILE = "cube.vert";
+//const string FRAGMENT_SHADER_FILE = "cube.frag";
+
+// Shaded shader sources
+const string VERTEX_SHADER_FILE = "cube_shaded.vert";
+const string FRAGMENT_SHADER_FILE = "cube_shaded.frag";
 
 int main() {
 	// start the gl logger
@@ -145,16 +150,28 @@ int main() {
 	/* Setup the scene data
 	*/
 	// a cube
+	//float cube_vertices[] = {
+	//	-5.f, 5.f, -5.f, 1.f, 0.f, 0.f,		// v0, color
+	//	5.f, 5.f, -5.f,	0.f, 1.f, 0.f,		// v1, color
+	//	5.f, 5.f, 5.f,	0.f, 0.f, 1.f,		// v2, color
+	//	-5.f, 5.f, 5.f,	1.f, 0.f, 1.f,		// v3, color
+	//	-5.f, -5.f, -5.f, 1.f, 1.f, 0.f,	// v4, color
+	//	5.f, -5.f, -5.f, 0.f, 1.f, 1.f,		// v5, color
+	//	5.f, -5.f, 5.f,	0.25f, 0.3f, 0.6f,	// v6, color
+	//	-5.f, -5.f, 5.f, 1.f, 0.2f, 0.1f	// v7, color
+	//};
+
 	float cube_vertices[] = {
-		-5.f, 5.f, -5.f, 1.f, 0.f, 0.f,		// v0, color
-		5.f, 5.f, -5.f,	0.f, 1.f, 0.f,		// v1, color
-		5.f, 5.f, 5.f,	0.f, 0.f, 1.f,		// v2, color
-		-5.f, 5.f, 5.f,	1.f, 0.f, 1.f,		// v3, color
-		-5.f, -5.f, -5.f, 1.f, 1.f, 0.f,	// v4, color
-		5.f, -5.f, -5.f, 0.f, 1.f, 1.f,		// v5, color
-		5.f, -5.f, 5.f,	0.25f, 0.3f, 0.6f,	// v6, color
-		-5.f, -5.f, 5.f, 1.f, 0.2f, 0.1f	// v7, color
+		-5.f, 5.f, -5.f, 0.f, 1.f, 0.f,		// v0, normal
+		5.f, 5.f, -5.f,	0.f, 1.f, 0.f,		// v1, normal
+		5.f, 5.f, 5.f,	0.f, 1.f, 0.f,		// v2, normal
+		-5.f, 5.f, 5.f,	0.f, 1.f, 0.f,		// v3, normal
+		-5.f, -5.f, -5.f, 0.f, -1.f, 0.f,	// v4, normal
+		5.f, -5.f, -5.f, 0.f, -1.f, 0.f,	// v5, normal
+		5.f, -5.f, 5.f,	0.f, -1.f, 0.f,		// v6, normal
+		-5.f, -5.f, 5.f, 0.f, -1.f, 0.f		// v7, normal
 	};
+
 
 	int cube_face_indices[] = {
 		0, 1, 3, 1, 2, 3, // top face
