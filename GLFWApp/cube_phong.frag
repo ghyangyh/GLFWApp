@@ -16,7 +16,7 @@ vec3 light_ambient = vec3(0.2, 0.2, 0.2); // grey ambient
 vec3 ks = vec3(1.0, 1.0, 1.0); // fully reflect specular light
 vec3 kd = vec3(1.0, 0.5, 0.0); // orange diffuse reflectance color
 vec3 ka = vec3(1.0, 1.0, 1.0); //fully reflected ambient light
-float specular_exponent = 100.0; // the specular shiness
+float specular_exponent = 10.0; // the specular shiness
 
 out vec4 frag_color;
 
