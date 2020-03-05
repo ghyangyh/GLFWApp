@@ -7,7 +7,7 @@ float degree_to_radians(float degrees) {
 	return degrees * 0.01745329251994329576923690768489f;
 }
 
-float normalize_angle_degrees(float& angle) {
+void normalize_angle_degrees(float& angle) {
 	while (angle < 0.f)
 		angle += 360.f;
 	while (angle > 360.f)

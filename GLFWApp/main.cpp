@@ -20,7 +20,11 @@ static int FRAME_COUNT(0);
 static const int WINDOW_WIDTH = 800;
 static const int WINDOW_HEIGHT = 600;
 
+// Global variables for mouse events
 static float X_ROT_ANGLE(0.f), Y_ROT_ANGLE(0.f), Z_ROT_ANGLE(0.f);
+static double LAST_MOUSE_POS_X(0.0), LAST_MOUSE_POS_Y(0.0);
+static bool MOUSE_LEFT_BUTTON_DOWN(false);
+static float MOUSE_MOVE_SPEED(0.1f);
 
 static unsigned int CUBE_VAO(0);
 static unsigned int CUBE_VBO(0), CUBE_EAO(0);
@@ -53,6 +57,36 @@ void framebuffer_size_callback(GLFWwindow* pwindow, int width, int height) {
 
 void glfw_error_callback(int error, const char* description) {
 	gl_log_err(GL_LOG_FILE, "GLFW ERROR: code %i msg: %s\n", error, description);
+}
+
+void glfw_mouse_button_callback(GLFWwindow* pwindow, int button, int action, int mods) {
+	// If the left button is pressed, record the current mouse position
+	if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
+		glfwGetCursorPos(pwindow, &LAST_MOUSE_POS_X, &LAST_MOUSE_POS_Y);
+		MOUSE_LEFT_BUTTON_DOWN = true;
+		//cout << "Left mouse button down...\n";
+	}
+	else if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE) {
+		MOUSE_LEFT_BUTTON_DOWN = false;
+		//cout << "Left mouse button release...\n";
+	}
+}
+
+void glfw_cursor_position_callback(GLFWwindow* pwindow, double xpos, double ypos) {
+	if (MOUSE_LEFT_BUTTON_DOWN) {
+		double dx = xpos - LAST_MOUSE_POS_X;
+		double dy = ypos - LAST_MOUSE_POS_Y;
+		
+		LAST_MOUSE_POS_X = xpos;
+		LAST_MOUSE_POS_Y = ypos;
+
+		Y_ROT_ANGLE += MOUSE_MOVE_SPEED * dx;
+		X_ROT_ANGLE += MOUSE_MOVE_SPEED * dy;
+		
+		normalize_angle_degrees(Y_ROT_ANGLE);
+		normalize_angle_degrees(X_ROT_ANGLE);
+
+	}
 }
 
 void processInput(GLFWwindow* pwindow) {
@@ -92,7 +126,8 @@ int main() {
 	}
 	glfwMakeContextCurrent(p_window);
 	glfwSetFramebufferSizeCallback(p_window, framebuffer_size_callback);
-
+	glfwSetCursorPosCallback(p_window, glfw_cursor_position_callback);
+	glfwSetMouseButtonCallback(p_window, glfw_mouse_button_callback);
 	// glew initialize
 	glewExperimental = GL_TRUE;
 	glewInit();
@@ -159,7 +194,7 @@ int main() {
 	*/
 	int model_mat_loc;
 	shader_program.get_uniform_location("aModelMat", model_mat_loc);
-	Eigen::Matrix4f model_mat = rotate_x(degree_to_radians(15.f));
+	Eigen::Matrix4f model_mat = Eigen::Matrix4f::Identity();//rotate_x(degree_to_radians(15.f));
 	glUniformMatrix4fv(model_mat_loc, 1, GL_FALSE, model_mat.data());
 
 	// The viewing matrix
@@ -185,12 +220,17 @@ int main() {
 	while (!glfwWindowShouldClose(p_window)) {
 
 		update_fps_counter(p_window);
+		
+		shader_program.use();
+		// update the model transformations according to mouse inputs
+		model_mat = rotate_y(degree_to_radians(Y_ROT_ANGLE)) * rotate_x(degree_to_radians(X_ROT_ANGLE));
+		glUniformMatrix4fv(model_mat_loc, 1, GL_FALSE, model_mat.data());
 
 		// rendering
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		shader_program.use();
+		
 		glBindVertexArray(CUBE_VAO);
 		glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
 

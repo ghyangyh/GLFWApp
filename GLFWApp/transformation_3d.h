@@ -14,7 +14,7 @@ float degree_to_radians(float degree);
 
 /*Normalize the angle in degrees within range [0, 360]
 */
-float normalize_angle_degrees(float& angle);
+void normalize_angle_degrees(float& angle);
 
 /* Compute the 3d roatation matrix around the x-axis.
 * radians: the rotation angle in radians
