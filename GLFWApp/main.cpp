@@ -29,8 +29,153 @@ static float MOUSE_MOVE_SPEED(0.1f);
 static unsigned int CUBE_VAO(0);
 static unsigned int CUBE_VBO(0), CUBE_EAO(0);
 GLShaderProgram shader_program;
+static bool RELOAD_PROGRAM_KEY_PRESSED(false);
+
+// The model, view and projection matrix
+static int MODEL_MAT_LOC(-1), VIEW_MAT_LOC(-1), PROJECTION_MAT_LOC(-1);
+Eigen::Matrix4f MODEL_MAT, VIEW_MAT, PROJECTION_MAT;
+
+// Non-shaded shader sources
+//const string VERTEX_SHADER_FILE = "cube.vert";
+//const string FRAGMENT_SHADER_FILE = "cube.frag";
+
+// Phong lighting shader sources
+//const string VERTEX_SHADER_FILE = "cube_phong.vert";
+//const string FRAGMENT_SHADER_FILE = "cube_phong.frag";
+
+// Blinn-Phong lighting shader sources
+const string VERTEX_SHADER_FILE = "cube_phong.vert"; // The vertex shader is the same
+const string FRAGMENT_SHADER_FILE = "cube_blinn_phong.frag";
+
+void setup_cube() {
+
+	// a cube
+	//float cube_vertices[] = {
+	//	-5.f, 5.f, -5.f, 1.f, 0.f, 0.f,		// v0, color
+	//	5.f, 5.f, -5.f,	0.f, 1.f, 0.f,		// v1, color
+	//	5.f, 5.f, 5.f,	0.f, 0.f, 1.f,		// v2, color
+	//	-5.f, 5.f, 5.f,	1.f, 0.f, 1.f,		// v3, color
+	//	-5.f, -5.f, -5.f, 1.f, 1.f, 0.f,	// v4, color
+	//	5.f, -5.f, -5.f, 0.f, 1.f, 1.f,		// v5, color
+	//	5.f, -5.f, 5.f,	0.25f, 0.3f, 0.6f,	// v6, color
+	//	-5.f, -5.f, 5.f, 1.f, 0.2f, 0.1f	// v7, color
+	//};
+
+	//float cube_vertices[] = {
+	//	-5.f, 5.f, -5.f, 0.f, 1.f, 0.f,		// v0, normal
+	//	5.f, 5.f, -5.f,	0.f, 1.f, 0.f,		// v1, normal
+	//	5.f, 5.f, 5.f,	0.f, 1.f, 0.f,		// v2, normal
+	//	-5.f, 5.f, 5.f,	0.f, 1.f, 0.f,		// v3, normal
+	//	-5.f, -5.f, -5.f, 0.f, -1.f, 0.f,	// v4, normal
+	//	5.f, -5.f, -5.f, 0.f, -1.f, 0.f,	// v5, normal
+	//	5.f, -5.f, 5.f,	0.f, -1.f, 0.f,		// v6, normal
+	//	-5.f, -5.f, 5.f, 0.f, -1.f, 0.f		// v7, normal
+	//};
+
+	float cube_vertices[] = {
+		-5.f, 5.f, -5.f, 0.f, 1.f, 0.f,		// v0, normal(top face)
+		5.f, 5.f, -5.f,	0.f, 1.f, 0.f,		// v1, normal(top face)
+		-5.f, 5.f, 5.f,	0.f, 1.f, 0.f,		// v3, normal(top face)
+		5.f, 5.f, -5.f,	0.f, 1.f, 0.f,		// v1, normal(top face)
+		5.f, 5.f, 5.f,	0.f, 1.f, 0.f,		// v2, normal(top face)
+		-5.f, 5.f, 5.f,	0.f, 1.f, 0.f,		// v3, normal(top face)
+
+		5.f, -5.f, -5.f, 0.f, -1.f, 0.f,	// v5, normal(bottom face)
+		-5.f, -5.f, -5.f, 0.f, -1.f, 0.f,	// v4, normal(bottom face)
+		5.f, -5.f, 5.f,	0.f, -1.f, 0.f,		// v6, normal(bottom face)
+		-5.f, -5.f, -5.f, 0.f, -1.f, 0.f,	// v4, normal(bottom face)
+		-5.f, -5.f, 5.f, 0.f, -1.f, 0.f,	// v7, normal(bottom face)
+		5.f, -5.f, 5.f,	0.f, -1.f, 0.f,		// v6, normal(bottom face)
+
+		-5.f, 5.f, 5.f,	0.f, 0.f, 1.f,		// v3, normal(front face)
+		5.f, 5.f, 5.f,	0.f, 0.f, 1.f,		// v2, normal(front face)
+		-5.f, -5.f, 5.f, 0.f, 0.f, 1.f,		// v7, normal(front face)
+		5.f, 5.f, 5.f,	0.f, 0.f, 1.f,		// v2, normal(front face)
+		5.f, -5.f, 5.f,	0.f, 0.f, 1.f,		// v6, normal(front face)
+		-5.f, -5.f, 5.f, 0.f, 0.f, 1.f,		// v7, normal(front face)
+
+		5.f, 5.f, -5.f,	0.f, 0.f, -1.f,		// v1, normal(back face)
+		-5.f, 5.f, -5.f, 0.f, 0.f, -1.f,	// v0, normal(back face)
+		5.f, -5.f, -5.f, 0.f, 0.f, -1.f,	// v5, normal(back face)
+		-5.f, 5.f, -5.f, 0.f, 0.f, -1.f,	// v0, normal(back face)
+		-5.f, -5.f, -5.f, 0.f, 0.f, -1.f,	// v4, normal(back face)
+		5.f, -5.f, -5.f, 0.f, 0.f, -1.f,	// v5, normal(back face)
+
+		-5.f, 5.f, -5.f, -1.f, 0.f, 0.f,	// v0, normal(left face)
+		-5.f, 5.f, 5.f,	-1.f, 0.f, 0.f,		// v3, normal(left face)
+		-5.f, -5.f, -5.f, -1.f, 0.f, 0.f,	// v4, normal(left face)
+		-5.f, 5.f, 5.f,	-1.f, 0.f, 0.f,		// v3, normal(left face)
+		-5.f, -5.f, 5.f, -1.f, 0.f, 0.f,	// v7, normal(left face)
+		-5.f, -5.f, -5.f, -1.f, 0.f, 0.f,	// v4, normal(left face)
+
+		5.f, 5.f, 5.f,	1.f, 0.f, 0.f,		// v2, normal(right face)
+		5.f, 5.f, -5.f,	1.f, 0.f, 0.f,		// v1, normal(right face)
+		5.f, -5.f, 5.f,	1.f, 0.f, 0.f,		// v6, normal(right face)
+		5.f, 5.f, -5.f,	1.f, 0.f, 0.f,		// v1, normal(right face)
+		5.f, -5.f, -5.f, 1.f, 0.f, 0.f,	    // v5, normal(right face)
+		5.f, -5.f, 5.f,	1.f, 0.f, 0.f		// v6, normal(right face)
+	};
+
+	int cube_face_indices[] = {
+		0, 1, 2, 3, 4, 5,			// top face
+		6, 7, 8, 9, 10, 11,			// bottom face
+		12, 13, 14, 15, 16, 17,		// front face
+		18, 19, 20, 21, 22, 23,		// back face
+		24, 25, 26, 27, 28, 29,		// left face
+		30, 31, 32, 33, 34, 35		// right face
+	};
 
 
+	// Send the cube data to GPU
+	glGenVertexArrays(1, &CUBE_VAO);
+	glGenBuffers(1, &CUBE_VBO);
+	glGenBuffers(1, &CUBE_EAO);
+
+	glBindVertexArray(CUBE_VAO);
+
+	// Fill in the vertex attributes buffer
+	glBindBuffer(GL_ARRAY_BUFFER, CUBE_VBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(cube_vertices), cube_vertices, GL_STATIC_DRAW);
+
+	// Specify the position data
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
+
+	// Specify the color data
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+	glEnableVertexAttribArray(1);
+
+	// Fill in the cube face indices buffer
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, CUBE_EAO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(cube_face_indices), cube_face_indices, GL_STATIC_DRAW);
+
+	glBindVertexArray(0);
+}
+
+void setup_mvp_matrices() {
+	//int model_mat_loc;
+	shader_program.get_uniform_location("aModelMat", MODEL_MAT_LOC);
+	MODEL_MAT = Eigen::Matrix4f::Identity();//rotate_x(degree_to_radians(15.f));
+	glUniformMatrix4fv(MODEL_MAT_LOC, 1, GL_FALSE, MODEL_MAT.data());
+
+	// The viewing matrix
+	//int view_mat_loc;
+	shader_program.get_uniform_location("aViewMat", VIEW_MAT_LOC);
+	Eigen::Vector3f CAM_POS(0.f, 0.f, 25.f);
+	Eigen::Vector3f CAM_CENTER(0.f, 0.f, 0.f);
+	Eigen::Vector3f CAM_UP(0.f, 1.f, 0.f);
+	VIEW_MAT = view_transform(CAM_POS, CAM_CENTER, CAM_UP);
+	glUniformMatrix4fv(VIEW_MAT_LOC, 1, GL_FALSE, VIEW_MAT.data());
+
+	// The projection matrix
+	float fovy_degree(60.f);
+	float aspect(float(WINDOW_WIDTH) / float(WINDOW_HEIGHT));
+	float z_near(0.01f), z_far(100.f);
+	PROJECTION_MAT = perspective(fovy_degree, aspect, z_near, z_far);
+	//int projection_mat_loc;
+	shader_program.get_uniform_location("aProjMat", PROJECTION_MAT_LOC);
+	glUniformMatrix4fv(PROJECTION_MAT_LOC, 1, GL_FALSE, PROJECTION_MAT.data());
+}
 
 void update_fps_counter(GLFWwindow* pWindow) {
 	double current_seconds(0.0), elapsed_seconds(0.0);
@@ -93,19 +238,22 @@ void processInput(GLFWwindow* pwindow) {
 	if (glfwGetKey(pwindow, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
 		glfwSetWindowShouldClose(pwindow, true);
 	}
+	// Reload the shader program if 'R' is pressed
+	else if (glfwGetKey(pwindow, GLFW_KEY_R)==GLFW_PRESS  && !RELOAD_PROGRAM_KEY_PRESSED) {
+		RELOAD_PROGRAM_KEY_PRESSED = true;
+		cout << "Old shader program id: " << shader_program.get_shader_program_id() << endl;
+		if (shader_program.reload()) {
+			shader_program.use();
+			// Reset these matrices
+			setup_mvp_matrices();
+		}
+		cout << "New shader program id: " << shader_program.get_shader_program_id() << endl;
+	}
+	else if (glfwGetKey(pwindow, GLFW_KEY_R) == GLFW_RELEASE && RELOAD_PROGRAM_KEY_PRESSED) {
+		RELOAD_PROGRAM_KEY_PRESSED = false;
+	}
 }
 
-// Non-shaded shader sources
-//const string VERTEX_SHADER_FILE = "cube.vert";
-//const string FRAGMENT_SHADER_FILE = "cube.frag";
-
-// Phong lighting shader sources
-//const string VERTEX_SHADER_FILE = "cube_phong.vert";
-//const string FRAGMENT_SHADER_FILE = "cube_phong.frag";
-
-// Blinn-Phong lighting shader sources
-const string VERTEX_SHADER_FILE = "cube_phong.vert"; // The vertex shader is the same
-const string FRAGMENT_SHADER_FILE = "cube_blinn_phong.frag";
 
 int main() {
 	// start the gl logger
@@ -153,152 +301,21 @@ int main() {
 	
 	/* Setup the scene data
 	*/
-	// a cube
-	//float cube_vertices[] = {
-	//	-5.f, 5.f, -5.f, 1.f, 0.f, 0.f,		// v0, color
-	//	5.f, 5.f, -5.f,	0.f, 1.f, 0.f,		// v1, color
-	//	5.f, 5.f, 5.f,	0.f, 0.f, 1.f,		// v2, color
-	//	-5.f, 5.f, 5.f,	1.f, 0.f, 1.f,		// v3, color
-	//	-5.f, -5.f, -5.f, 1.f, 1.f, 0.f,	// v4, color
-	//	5.f, -5.f, -5.f, 0.f, 1.f, 1.f,		// v5, color
-	//	5.f, -5.f, 5.f,	0.25f, 0.3f, 0.6f,	// v6, color
-	//	-5.f, -5.f, 5.f, 1.f, 0.2f, 0.1f	// v7, color
-	//};
-
-	//float cube_vertices[] = {
-	//	-5.f, 5.f, -5.f, 0.f, 1.f, 0.f,		// v0, normal
-	//	5.f, 5.f, -5.f,	0.f, 1.f, 0.f,		// v1, normal
-	//	5.f, 5.f, 5.f,	0.f, 1.f, 0.f,		// v2, normal
-	//	-5.f, 5.f, 5.f,	0.f, 1.f, 0.f,		// v3, normal
-	//	-5.f, -5.f, -5.f, 0.f, -1.f, 0.f,	// v4, normal
-	//	5.f, -5.f, -5.f, 0.f, -1.f, 0.f,	// v5, normal
-	//	5.f, -5.f, 5.f,	0.f, -1.f, 0.f,		// v6, normal
-	//	-5.f, -5.f, 5.f, 0.f, -1.f, 0.f		// v7, normal
-	//};
-	//int cube_face_indices[] = {
-	//	0, 1, 3, 1, 2, 3, // top face
-	//	5, 4, 6, 4, 7, 6, // bottom face
-	//	3, 2, 7, 2, 6, 7, // front face
-	//	1, 0, 5, 0, 4, 5, // back face
-	//	0, 3, 4, 3, 7, 4, // left face
-	//	2, 1, 6, 1, 5, 6 // right face
-	//};
-
-
-	float cube_vertices[] = {
-		-5.f, 5.f, -5.f, 0.f, 1.f, 0.f,		// v0, normal(top face)
-		5.f, 5.f, -5.f,	0.f, 1.f, 0.f,		// v1, normal(top face)
-		-5.f, 5.f, 5.f,	0.f, 1.f, 0.f,		// v3, normal(top face)
-		5.f, 5.f, -5.f,	0.f, 1.f, 0.f,		// v1, normal(top face)
-		5.f, 5.f, 5.f,	0.f, 1.f, 0.f,		// v2, normal(top face)
-		-5.f, 5.f, 5.f,	0.f, 1.f, 0.f,		// v3, normal(top face)
-	
-		5.f, -5.f, -5.f, 0.f, -1.f, 0.f,	// v5, normal(bottom face)
-		-5.f, -5.f, -5.f, 0.f, -1.f, 0.f,	// v4, normal(bottom face)
-		5.f, -5.f, 5.f,	0.f, -1.f, 0.f,		// v6, normal(bottom face)
-		-5.f, -5.f, -5.f, 0.f, -1.f, 0.f,	// v4, normal(bottom face)
-		-5.f, -5.f, 5.f, 0.f, -1.f, 0.f,	// v7, normal(bottom face)
-		5.f, -5.f, 5.f,	0.f, -1.f, 0.f,		// v6, normal(bottom face)
-
-		-5.f, 5.f, 5.f,	0.f, 0.f, 1.f,		// v3, normal(front face)
-		5.f, 5.f, 5.f,	0.f, 0.f, 1.f,		// v2, normal(front face)
-		-5.f, -5.f, 5.f, 0.f, 0.f, 1.f,		// v7, normal(front face)
-		5.f, 5.f, 5.f,	0.f, 0.f, 1.f,		// v2, normal(front face)
-		5.f, -5.f, 5.f,	0.f, 0.f, 1.f,		// v6, normal(front face)
-		-5.f, -5.f, 5.f, 0.f, 0.f, 1.f,		// v7, normal(front face)
-
-		5.f, 5.f, -5.f,	0.f, 0.f, -1.f,		// v1, normal(back face)
-		-5.f, 5.f, -5.f, 0.f, 0.f, -1.f,	// v0, normal(back face)
-		5.f, -5.f, -5.f, 0.f, 0.f, -1.f,	// v5, normal(back face)
-		-5.f, 5.f, -5.f, 0.f, 0.f, -1.f,	// v0, normal(back face)
-		-5.f, -5.f, -5.f, 0.f, 0.f, -1.f,	// v4, normal(back face)
-		5.f, -5.f, -5.f, 0.f, 0.f, -1.f,	// v5, normal(back face)
-
-		-5.f, 5.f, -5.f, -1.f, 0.f, 0.f,	// v0, normal(left face)
-		-5.f, 5.f, 5.f,	-1.f, 0.f, 0.f,		// v3, normal(left face)
-		-5.f, -5.f, -5.f, -1.f, 0.f, 0.f,	// v4, normal(left face)
-		-5.f, 5.f, 5.f,	-1.f, 0.f, 0.f,		// v3, normal(left face)
-		-5.f, -5.f, 5.f, -1.f, 0.f, 0.f,	// v7, normal(left face)
-		-5.f, -5.f, -5.f, -1.f, 0.f, 0.f,	// v4, normal(left face)
-		
-		5.f, 5.f, 5.f,	1.f, 0.f, 0.f,		// v2, normal(right face)
-		5.f, 5.f, -5.f,	1.f, 0.f, 0.f,		// v1, normal(right face)
-		5.f, -5.f, 5.f,	1.f, 0.f, 0.f,		// v6, normal(right face)
-		5.f, 5.f, -5.f,	1.f, 0.f, 0.f,		// v1, normal(right face)
-		5.f, -5.f, -5.f, 1.f, 0.f, 0.f,	    // v5, normal(right face)
-		5.f, -5.f, 5.f,	1.f, 0.f, 0.f		// v6, normal(right face)
-	};
-
-	int cube_face_indices[] = {
-		0, 1, 2, 3, 4, 5,			// top face
-		6, 7, 8, 9, 10, 11,			// bottom face
-		12, 13, 14, 15, 16, 17,		// front face
-		18, 19, 20, 21, 22, 23,		// back face
-		24, 25, 26, 27, 28, 29,		// left face
-		30, 31, 32, 33, 34, 35		// right face
-	};
-	
-
-	// Send the cube data to GPU
-	glGenVertexArrays(1, &CUBE_VAO);
-	glGenBuffers(1, &CUBE_VBO);
-	glGenBuffers(1, &CUBE_EAO);
-
-	glBindVertexArray(CUBE_VAO);
-
-	// Fill in the vertex attributes buffer
-	glBindBuffer(GL_ARRAY_BUFFER, CUBE_VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(cube_vertices), cube_vertices, GL_STATIC_DRAW);
-
-	// Specify the position data
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(0);
-
-	// Specify the color data
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3*sizeof(float)));
-	glEnableVertexAttribArray(1);
-
-	// Fill in the cube face indices buffer
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, CUBE_EAO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(cube_face_indices), cube_face_indices, GL_STATIC_DRAW);
-
-	glBindVertexArray(0);
+	setup_cube();
 
 	/* Setup the model, view and projection matrices
 	*/
-	int model_mat_loc;
-	shader_program.get_uniform_location("aModelMat", model_mat_loc);
-	Eigen::Matrix4f model_mat = Eigen::Matrix4f::Identity();//rotate_x(degree_to_radians(15.f));
-	glUniformMatrix4fv(model_mat_loc, 1, GL_FALSE, model_mat.data());
-
-	// The viewing matrix
-	int view_mat_loc;
-	shader_program.get_uniform_location("aViewMat", view_mat_loc);
-	Eigen::Vector3f CAM_POS(0.f, 0.f, 25.f);
-	Eigen::Vector3f CAM_CENTER(0.f, 0.f, 0.f);
-	Eigen::Vector3f CAM_UP(0.f, 1.f, 0.f);
-	Eigen::Matrix4f view_mat = view_transform(CAM_POS, CAM_CENTER, CAM_UP);
-	glUniformMatrix4fv(view_mat_loc, 1, GL_FALSE, view_mat.data());
-
-	// The projection matrix
-	float fovy_degree(60.f);
-	float aspect(float(WINDOW_WIDTH) / float(WINDOW_HEIGHT));
-	float z_near(0.01f), z_far(100.f);
-	Eigen::Matrix4f perspective_mat = perspective(fovy_degree, aspect, z_near, z_far);
-	int projection_mat_loc;
-	shader_program.get_uniform_location("aProjMat", projection_mat_loc);
-	glUniformMatrix4fv(projection_mat_loc, 1, GL_FALSE, perspective_mat.data());
+	setup_mvp_matrices();
 
 	glEnable(GL_DEPTH_TEST);
 
 	while (!glfwWindowShouldClose(p_window)) {
 
 		update_fps_counter(p_window);
-		
 		shader_program.use();
 		// update the model transformations according to mouse inputs
-		model_mat = rotate_y(degree_to_radians(Y_ROT_ANGLE)) * rotate_x(degree_to_radians(X_ROT_ANGLE));
-		glUniformMatrix4fv(model_mat_loc, 1, GL_FALSE, model_mat.data());
+		MODEL_MAT = rotate_y(degree_to_radians(Y_ROT_ANGLE)) * rotate_x(degree_to_radians(X_ROT_ANGLE));
+		glUniformMatrix4fv(MODEL_MAT_LOC, 1, GL_FALSE, MODEL_MAT.data());
 
 		// rendering
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);

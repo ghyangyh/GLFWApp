@@ -12,7 +12,9 @@ GLShaderProgram::GLShaderProgram():m_vertex_shader_id(0),
 m_fragment_shader_id(0), 
 m_program_id(0),
 m_b_success(false),
-m_gl_logger_file_name("")
+m_gl_logger_file_name(""),
+m_vertex_shader_file_name(""),
+m_fragment_shader_file_name("")
 {
 
 }
@@ -24,7 +26,9 @@ GLShaderProgram::GLShaderProgram(const string& aVertexShaderFileName,
 	m_fragment_shader_id(0), 
 	m_program_id(0), 
 	m_b_success(false),
-	m_gl_logger_file_name(aLoggerFileName){
+	m_gl_logger_file_name(aLoggerFileName), 
+	m_vertex_shader_file_name(aVertexShaderFileName), 
+	m_fragment_shader_file_name(aFragmentShaderFileName) {
 	
 	// Attach and compile a vertex shader code
 	m_vertex_shader_id = glCreateShader(GL_VERTEX_SHADER);
@@ -40,7 +44,7 @@ GLShaderProgram::GLShaderProgram(const string& aVertexShaderFileName,
 			compile_shader(FRAGMENT_SHADER, a_fragment_shader_source_str)) {
 
 			// Link a shader program
-			if (link_program()) {
+			if ((m_program_id = link_program()) != 0) {
 				m_b_success = true;
 				glDeleteShader(m_vertex_shader_id);
 				glDeleteShader(m_fragment_shader_id);
@@ -62,6 +66,9 @@ GLShaderProgram::~GLShaderProgram() {
 }
 
 bool GLShaderProgram::attach_vertex_shader(const string& aVertexShaderFileName) {
+	// Store the vertex shader file name
+	m_vertex_shader_file_name = aVertexShaderFileName;
+
 	// Create a vertex shader id
 	m_vertex_shader_id = glCreateShader(GL_VERTEX_SHADER);
 	string a_vertex_shader_source_str;
@@ -74,6 +81,7 @@ bool GLShaderProgram::attach_vertex_shader(const string& aVertexShaderFileName) 
 }
 
 bool GLShaderProgram::attach_fragment_shader(const string& aFragmentShaderFileName) {
+	m_fragment_shader_file_name = aFragmentShaderFileName;
 	m_fragment_shader_id = glCreateShader(GL_FRAGMENT_SHADER);
 	string a_fragment_shader_source_str;
 	if (load_shader_file(aFragmentShaderFileName, a_fragment_shader_source_str) &&
@@ -83,13 +91,44 @@ bool GLShaderProgram::attach_fragment_shader(const string& aFragmentShaderFileNa
 }
 
 bool GLShaderProgram::link() {
-	if (link_program())
+	if ((m_program_id = link_program()) != 0)
 		m_b_success = true;
 	else
 		m_b_success = false;
 	glDeleteShader(m_vertex_shader_id);
 	glDeleteShader(m_fragment_shader_id);
 	return m_b_success;
+}
+
+bool GLShaderProgram::reload() {
+	if (attach_vertex_shader(m_vertex_shader_file_name)) {
+		if (attach_fragment_shader(m_fragment_shader_file_name)) {
+			unsigned int new_program_id = link_program();
+			if (new_program_id != 0) {
+				glDeleteProgram(m_program_id);
+				glDeleteShader(m_vertex_shader_id);
+				glDeleteShader(m_fragment_shader_id);
+
+				m_program_id = new_program_id;
+				return true;
+			}
+			else {
+				gl_log_err("ERROR: Linking the shader program failed after reloading shaders: %s, %s\n",
+					m_vertex_shader_file_name.c_str(), m_fragment_shader_file_name.c_str());
+				return false;
+			}
+		}
+		else {
+			gl_log_err("ERROR: Compiling the fragment shader failed when reloading %s\n",
+				m_vertex_shader_file_name.c_str());
+			return false;
+		}
+	}
+	else {
+		gl_log_err("ERROR: Compiling the vertex shader failed when reloading %s\n",
+			m_vertex_shader_file_name.c_str());
+		return false;
+	}
 }
 
 bool GLShaderProgram::load_shader_file(const string& aFileName, string& aShaderSourceStr) {
@@ -144,21 +183,22 @@ int GLShaderProgram::compile_shader(ShaderType aShaderType,
 	return b_success;
 }
 
-int GLShaderProgram::link_program() {
-	m_program_id = glCreateProgram();
-	glAttachShader(m_program_id, m_vertex_shader_id);
-	glAttachShader(m_program_id, m_fragment_shader_id);
-	glLinkProgram(m_program_id);
+unsigned int GLShaderProgram::link_program() {
+	unsigned int program_id = glCreateProgram();
+	glAttachShader(program_id, m_vertex_shader_id);
+	glAttachShader(program_id, m_fragment_shader_id);
+	glLinkProgram(program_id);
 	int b_success(0);
 	char info_buf[512];
-	glGetProgramiv(m_program_id, GL_LINK_STATUS, &b_success);
+	glGetProgramiv(program_id, GL_LINK_STATUS, &b_success);
 	if (!b_success && !m_gl_logger_file_name.empty()) {
-		glGetProgramInfoLog(m_program_id, 512, nullptr, info_buf);
+		glGetProgramInfoLog(program_id, 512, nullptr, info_buf);
 		gl_log_err(m_gl_logger_file_name.c_str(),
 			"SHADER_PROGRAM_LINK_ERROR: %s\n",
 			info_buf);
+		return 0;
 	}
-	return b_success;
+	return program_id;
 }
 
 int GLShaderProgram::get_uniform_location(const string& aUniformName, int& aUniformLocation) {

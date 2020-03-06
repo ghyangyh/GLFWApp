@@ -18,6 +18,7 @@ public:
 	*/
 	GLShaderProgram(const std::string& aVertexShaderFileName, const std::string& aFragmentShaderFileName, const std::string& aLoggerFileName);
 	~GLShaderProgram();
+
 	/* The copy and assignment is disabled
 	*/
 	GLShaderProgram(const GLShaderProgram&) = delete;
@@ -44,6 +45,12 @@ public:
 	inline void use() const {
 		glUseProgram(m_program_id);
 	}
+
+	/* Reload the shader program by recompiling shaders and linking into a new program.
+	*
+	* returns true if no errors occured, otherwise false.
+	*/
+	bool reload();
 
 	/* Set the logger file's name.
 	*/
@@ -84,14 +91,16 @@ protected:
 	int compile_shader(ShaderType aShaderType, const std::string& aShaderSourceStr);
 
 	/* Utility function to link all the compiled shaders into one program.
-	* returns 0 if failed.
+	* returns 0 if failed, othewise return the program id.
 	*/
-	int link_program();
+	unsigned int link_program();
 
 private:
 	unsigned int m_vertex_shader_id; 
 	unsigned int m_fragment_shader_id;
 	unsigned int m_program_id;
+	std::string m_vertex_shader_file_name;
+	std::string m_fragment_shader_file_name;
 	bool m_b_success;
 	std::string m_gl_logger_file_name;
 
