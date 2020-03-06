@@ -99,9 +99,13 @@ void processInput(GLFWwindow* pwindow) {
 //const string VERTEX_SHADER_FILE = "cube.vert";
 //const string FRAGMENT_SHADER_FILE = "cube.frag";
 
-// Shaded shader sources
-const string VERTEX_SHADER_FILE = "cube_shaded.vert";
-const string FRAGMENT_SHADER_FILE = "cube_shaded.frag";
+// Phong lighting shader sources
+//const string VERTEX_SHADER_FILE = "cube_phong.vert";
+//const string FRAGMENT_SHADER_FILE = "cube_phong.frag";
+
+// Blinn-Phong lighting shader sources
+const string VERTEX_SHADER_FILE = "cube_phong.vert"; // The vertex shader is the same
+const string FRAGMENT_SHADER_FILE = "cube_blinn_phong.frag";
 
 int main() {
 	// start the gl logger
@@ -161,26 +165,79 @@ int main() {
 	//	-5.f, -5.f, 5.f, 1.f, 0.2f, 0.1f	// v7, color
 	//};
 
-	float cube_vertices[] = {
-		-5.f, 5.f, -5.f, 0.f, 1.f, 0.f,		// v0, normal
-		5.f, 5.f, -5.f,	0.f, 1.f, 0.f,		// v1, normal
-		5.f, 5.f, 5.f,	0.f, 1.f, 0.f,		// v2, normal
-		-5.f, 5.f, 5.f,	0.f, 1.f, 0.f,		// v3, normal
-		-5.f, -5.f, -5.f, 0.f, -1.f, 0.f,	// v4, normal
-		5.f, -5.f, -5.f, 0.f, -1.f, 0.f,	// v5, normal
-		5.f, -5.f, 5.f,	0.f, -1.f, 0.f,		// v6, normal
-		-5.f, -5.f, 5.f, 0.f, -1.f, 0.f		// v7, normal
-	};
+	//float cube_vertices[] = {
+	//	-5.f, 5.f, -5.f, 0.f, 1.f, 0.f,		// v0, normal
+	//	5.f, 5.f, -5.f,	0.f, 1.f, 0.f,		// v1, normal
+	//	5.f, 5.f, 5.f,	0.f, 1.f, 0.f,		// v2, normal
+	//	-5.f, 5.f, 5.f,	0.f, 1.f, 0.f,		// v3, normal
+	//	-5.f, -5.f, -5.f, 0.f, -1.f, 0.f,	// v4, normal
+	//	5.f, -5.f, -5.f, 0.f, -1.f, 0.f,	// v5, normal
+	//	5.f, -5.f, 5.f,	0.f, -1.f, 0.f,		// v6, normal
+	//	-5.f, -5.f, 5.f, 0.f, -1.f, 0.f		// v7, normal
+	//};
+	//int cube_face_indices[] = {
+	//	0, 1, 3, 1, 2, 3, // top face
+	//	5, 4, 6, 4, 7, 6, // bottom face
+	//	3, 2, 7, 2, 6, 7, // front face
+	//	1, 0, 5, 0, 4, 5, // back face
+	//	0, 3, 4, 3, 7, 4, // left face
+	//	2, 1, 6, 1, 5, 6 // right face
+	//};
 
+
+	float cube_vertices[] = {
+		-5.f, 5.f, -5.f, 0.f, 1.f, 0.f,		// v0, normal(top face)
+		5.f, 5.f, -5.f,	0.f, 1.f, 0.f,		// v1, normal(top face)
+		-5.f, 5.f, 5.f,	0.f, 1.f, 0.f,		// v3, normal(top face)
+		5.f, 5.f, -5.f,	0.f, 1.f, 0.f,		// v1, normal(top face)
+		5.f, 5.f, 5.f,	0.f, 1.f, 0.f,		// v2, normal(top face)
+		-5.f, 5.f, 5.f,	0.f, 1.f, 0.f,		// v3, normal(top face)
+	
+		5.f, -5.f, -5.f, 0.f, -1.f, 0.f,	// v5, normal(bottom face)
+		-5.f, -5.f, -5.f, 0.f, -1.f, 0.f,	// v4, normal(bottom face)
+		5.f, -5.f, 5.f,	0.f, -1.f, 0.f,		// v6, normal(bottom face)
+		-5.f, -5.f, -5.f, 0.f, -1.f, 0.f,	// v4, normal(bottom face)
+		-5.f, -5.f, 5.f, 0.f, -1.f, 0.f,	// v7, normal(bottom face)
+		5.f, -5.f, 5.f,	0.f, -1.f, 0.f,		// v6, normal(bottom face)
+
+		-5.f, 5.f, 5.f,	0.f, 0.f, 1.f,		// v3, normal(front face)
+		5.f, 5.f, 5.f,	0.f, 0.f, 1.f,		// v2, normal(front face)
+		-5.f, -5.f, 5.f, 0.f, 0.f, 1.f,		// v7, normal(front face)
+		5.f, 5.f, 5.f,	0.f, 0.f, 1.f,		// v2, normal(front face)
+		5.f, -5.f, 5.f,	0.f, 0.f, 1.f,		// v6, normal(front face)
+		-5.f, -5.f, 5.f, 0.f, 0.f, 1.f,		// v7, normal(front face)
+
+		5.f, 5.f, -5.f,	0.f, 0.f, -1.f,		// v1, normal(back face)
+		-5.f, 5.f, -5.f, 0.f, 0.f, -1.f,	// v0, normal(back face)
+		5.f, -5.f, -5.f, 0.f, 0.f, -1.f,	// v5, normal(back face)
+		-5.f, 5.f, -5.f, 0.f, 0.f, -1.f,	// v0, normal(back face)
+		-5.f, -5.f, -5.f, 0.f, 0.f, -1.f,	// v4, normal(back face)
+		5.f, -5.f, -5.f, 0.f, 0.f, -1.f,	// v5, normal(back face)
+
+		-5.f, 5.f, -5.f, -1.f, 0.f, 0.f,	// v0, normal(left face)
+		-5.f, 5.f, 5.f,	-1.f, 0.f, 0.f,		// v3, normal(left face)
+		-5.f, -5.f, -5.f, -1.f, 0.f, 0.f,	// v4, normal(left face)
+		-5.f, 5.f, 5.f,	-1.f, 0.f, 0.f,		// v3, normal(left face)
+		-5.f, -5.f, 5.f, -1.f, 0.f, 0.f,	// v7, normal(left face)
+		-5.f, -5.f, -5.f, -1.f, 0.f, 0.f,	// v4, normal(left face)
+		
+		5.f, 5.f, 5.f,	1.f, 0.f, 0.f,		// v2, normal(right face)
+		5.f, 5.f, -5.f,	1.f, 0.f, 0.f,		// v1, normal(right face)
+		5.f, -5.f, 5.f,	1.f, 0.f, 0.f,		// v6, normal(right face)
+		5.f, 5.f, -5.f,	1.f, 0.f, 0.f,		// v1, normal(right face)
+		5.f, -5.f, -5.f, 1.f, 0.f, 0.f,	    // v5, normal(right face)
+		5.f, -5.f, 5.f,	1.f, 0.f, 0.f		// v6, normal(right face)
+	};
 
 	int cube_face_indices[] = {
-		0, 1, 3, 1, 2, 3, // top face
-		5, 4, 6, 4, 7, 6, // bottom face
-		3, 2, 7, 2, 6, 7, // front face
-		1, 0, 5, 0, 4, 5, // back face
-		0, 3, 4, 3, 7, 4, // left face
-		2, 1, 6, 1, 5, 6 // right face
+		0, 1, 2, 3, 4, 5,			// top face
+		6, 7, 8, 9, 10, 11,			// bottom face
+		12, 13, 14, 15, 16, 17,		// front face
+		18, 19, 20, 21, 22, 23,		// back face
+		24, 25, 26, 27, 28, 29,		// left face
+		30, 31, 32, 33, 34, 35		// right face
 	};
+	
 
 	// Send the cube data to GPU
 	glGenVertexArrays(1, &CUBE_VAO);
