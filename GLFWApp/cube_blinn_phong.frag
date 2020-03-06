@@ -38,7 +38,7 @@ void main()
 	// the final diffuse color
 	vec3 diffuse_color = light_diffuse * kd * diffuse_dot_prod; 
 
-	///*** Calculate the specular color***///
+	///*** Calculate the specular color using half way direction***///
 	// In the eye space, the viewer or the virtual camera is at the origin
 	vec3 eye_dir = normalize(vec3(-cube_vertex_eye_space));
 	
