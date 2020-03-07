@@ -20,6 +20,14 @@ static double PREVIOUS_SECONDS(0.0);
 static int FRAME_COUNT(0);
 static const int WINDOW_WIDTH = 800;
 static const int WINDOW_HEIGHT = 600;
+static int FRAME_BUFFER_WIDTH = 800;
+static int FRAME_BUFFER_HEIGHT = 600;
+
+// Globals for the virtual camera
+Eigen::Vector3f CAM_POS(0.f, 0.f, 25.f);
+Eigen::Vector3f CAM_CENTER(0.f, 0.f, 0.f);
+Eigen::Vector3f CAM_UP(0.f, 1.f, 0.f);
+
 
 // Global variables for mouse events
 static float X_ROT_ANGLE(0.f), Y_ROT_ANGLE(0.f), Z_ROT_ANGLE(0.f);
@@ -27,12 +35,17 @@ static double LAST_MOUSE_POS_X(0.0), LAST_MOUSE_POS_Y(0.0);
 static bool MOUSE_LEFT_BUTTON_DOWN(false);
 static float MOUSE_MOVE_SPEED(0.1f);
 
+// Globals for the vertex array and buffer objects
 static unsigned int CUBE_VAO(0);
 static unsigned int CUBE_VBO(0), CUBE_EAO(0);
 GLShaderProgram shader_program;
+
+// Globals for shader program reloading
 static bool RELOAD_PROGRAM_KEY_PRESSED(false);
 static bool RELOAD_PROGRAM_KEY_1_PRESSED(false);
 static bool RELOAD_PROGRAM_KEY_2_PRESSED(false);
+static bool RELOAD_PROGRAM_KEY_3_PRESSED(false);
+
 // The model, view and projection matrix
 static int MODEL_MAT_LOC(-1), VIEW_MAT_LOC(-1), PROJECTION_MAT_LOC(-1);
 Eigen::Matrix4f MODEL_MAT, VIEW_MAT, PROJECTION_MAT;
@@ -49,9 +62,9 @@ Eigen::Matrix4f MODEL_MAT, VIEW_MAT, PROJECTION_MAT;
 //const string VERTEX_SHADER_FILE = "cube_blinn_phong.vert"; // The vertex shader is the same
 //const string FRAGMENT_SHADER_FILE = "cube_blinn_phong.frag";
 
-vector<string> VERTEX_SHADER_FILES{"cube_phong.vert", "cube_blinn_phong.vert" };
-vector<string> FRAGMENT_SHADER_FILES{ "cube_phong.frag", "cube_blinn_phong.frag" };
-vector<string> SHADER_PROGRAM_TYPE{"Phong", "Blinn-Phong"};
+vector<string> VERTEX_SHADER_FILES{"cube_phong.vert", "cube_blinn_phong.vert", "cube_gouraud.vert" };
+vector<string> FRAGMENT_SHADER_FILES{ "cube_phong.frag", "cube_blinn_phong.frag", "cube_gouraud.frag" };
+vector<string> SHADER_PROGRAM_TYPE{"Phong", "Blinn-Phong", "Gouraud"};
 int SHADER_PROGRAM_ID(0);
 
 void setup_cube() {
@@ -167,15 +180,12 @@ void setup_mvp_matrices() {
 
 	// The viewing matrix
 	shader_program.get_uniform_location("aViewMat", VIEW_MAT_LOC);
-	Eigen::Vector3f CAM_POS(0.f, 0.f, 25.f);
-	Eigen::Vector3f CAM_CENTER(0.f, 0.f, 0.f);
-	Eigen::Vector3f CAM_UP(0.f, 1.f, 0.f);
 	VIEW_MAT = view_transform(CAM_POS, CAM_CENTER, CAM_UP);
 	glUniformMatrix4fv(VIEW_MAT_LOC, 1, GL_FALSE, VIEW_MAT.data());
 
 	// The projection matrix
 	float fovy_degree(60.f);
-	float aspect(float(WINDOW_WIDTH) / float(WINDOW_HEIGHT));
+	float aspect(float(FRAME_BUFFER_WIDTH) / float(FRAME_BUFFER_HEIGHT));
 	float z_near(0.01f), z_far(100.f);
 	PROJECTION_MAT = perspective(fovy_degree, aspect, z_near, z_far);
 	shader_program.get_uniform_location("aProjMat", PROJECTION_MAT_LOC);
@@ -199,7 +209,9 @@ void update_fps_counter(GLFWwindow* pWindow) {
 
 void framebuffer_size_callback(GLFWwindow* pwindow, int width, int height) {
 	glViewport(0, 0, width, height);
-	
+	FRAME_BUFFER_WIDTH = width;
+	FRAME_BUFFER_HEIGHT = height;
+
 	// Update the projection matrix with new aspect ratio
 	PROJECTION_MAT = perspective(60.f, float(width)/float(height), 0.01f, 100.f);
 	shader_program.get_uniform_location("aProjMat", PROJECTION_MAT_LOC);
@@ -262,6 +274,7 @@ void processInput(GLFWwindow* pwindow) {
 	else if (glfwGetKey(pwindow, GLFW_KEY_R) == GLFW_RELEASE && RELOAD_PROGRAM_KEY_PRESSED) {
 		RELOAD_PROGRAM_KEY_PRESSED = false;
 	}
+	// Loading the Phong shading model
 	else if (glfwGetKey(pwindow, GLFW_KEY_1) == GLFW_PRESS && !RELOAD_PROGRAM_KEY_1_PRESSED) {
 		RELOAD_PROGRAM_KEY_1_PRESSED = true;
 		SHADER_PROGRAM_ID = 0;
@@ -274,6 +287,7 @@ void processInput(GLFWwindow* pwindow) {
 	else if (glfwGetKey(pwindow, GLFW_KEY_1) == GLFW_RELEASE && RELOAD_PROGRAM_KEY_1_PRESSED) {
 		RELOAD_PROGRAM_KEY_1_PRESSED = false;
 	}
+	// Loading the Blinn-Phong shading model
 	else if (glfwGetKey(pwindow, GLFW_KEY_2) == GLFW_PRESS && !RELOAD_PROGRAM_KEY_2_PRESSED) {
 		RELOAD_PROGRAM_KEY_2_PRESSED = true;
 		SHADER_PROGRAM_ID = 1;
@@ -285,6 +299,24 @@ void processInput(GLFWwindow* pwindow) {
 	}
 	else if (glfwGetKey(pwindow, GLFW_KEY_2) == GLFW_RELEASE && RELOAD_PROGRAM_KEY_2_PRESSED) {
 		RELOAD_PROGRAM_KEY_2_PRESSED = false;
+	}
+	// Loading the Gouraud shading model
+	else if (glfwGetKey(pwindow, GLFW_KEY_3) == GLFW_PRESS && !RELOAD_PROGRAM_KEY_3_PRESSED) {
+		RELOAD_PROGRAM_KEY_3_PRESSED = true;
+		SHADER_PROGRAM_ID = 2;
+		cout << "Loading shade program: " << SHADER_PROGRAM_TYPE[SHADER_PROGRAM_ID] << endl;
+		if (shader_program.reload(VERTEX_SHADER_FILES[SHADER_PROGRAM_ID], 
+			FRAGMENT_SHADER_FILES[SHADER_PROGRAM_ID])) {
+			shader_program.use();
+			setup_mvp_matrices();
+			// Set the camera position
+			int camera_pos_loc(-1);
+			shader_program.get_uniform_location("aCameraPos", camera_pos_loc);
+			glUniform4fv(camera_pos_loc, 1, CAM_POS.data());
+		}
+	}
+	else if (glfwGetKey(pwindow, GLFW_KEY_3) == GLFW_RELEASE && RELOAD_PROGRAM_KEY_3_PRESSED) {
+		RELOAD_PROGRAM_KEY_3_PRESSED = false;
 	}
 }
 
