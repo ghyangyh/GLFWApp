@@ -46,11 +46,18 @@ public:
 		glUseProgram(m_program_id);
 	}
 
-	/* Reload the shader program by recompiling shaders and linking into a new program.
+	/* Reload the shader program by recompiling current shaders and linking them into a new program.
 	*
 	* returns true if no errors occured, otherwise false.
 	*/
 	bool reload();
+
+	/* Reload the shader program by compiling new shaders and linking them into a new program.
+	* aNewVertexShaderFile: the new vertex shader source file
+	* aNewFragmentShaderFile: the new fragment shader source file
+	* returns true if successed, otherwise false.
+	*/
+	bool reload(const std::string& aNewVertexShaderFile, const std::string& aNewFragmentShaderFile);
 
 	/* Set the logger file's name.
 	*/

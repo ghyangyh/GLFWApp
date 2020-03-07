@@ -131,6 +131,14 @@ bool GLShaderProgram::reload() {
 	}
 }
 
+bool GLShaderProgram::reload(const string& aNewVertexShaderFile,
+	const string& aNewFragmentShaderFile) {
+	m_vertex_shader_file_name = aNewVertexShaderFile;
+	m_fragment_shader_file_name = aNewFragmentShaderFile;
+
+	return reload();
+}
+
 bool GLShaderProgram::load_shader_file(const string& aFileName, string& aShaderSourceStr) {
 	ifstream inputs(aFileName);
 	if (inputs) {

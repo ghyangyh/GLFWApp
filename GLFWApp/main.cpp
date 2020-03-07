@@ -4,6 +4,7 @@
 #include <string>
 #include <sstream>
 #include <cmath>
+#include <vector>
 using namespace std;
 
 #include "GL/glew.h"
@@ -30,7 +31,8 @@ static unsigned int CUBE_VAO(0);
 static unsigned int CUBE_VBO(0), CUBE_EAO(0);
 GLShaderProgram shader_program;
 static bool RELOAD_PROGRAM_KEY_PRESSED(false);
-
+static bool RELOAD_PROGRAM_KEY_1_PRESSED(false);
+static bool RELOAD_PROGRAM_KEY_2_PRESSED(false);
 // The model, view and projection matrix
 static int MODEL_MAT_LOC(-1), VIEW_MAT_LOC(-1), PROJECTION_MAT_LOC(-1);
 Eigen::Matrix4f MODEL_MAT, VIEW_MAT, PROJECTION_MAT;
@@ -44,8 +46,13 @@ Eigen::Matrix4f MODEL_MAT, VIEW_MAT, PROJECTION_MAT;
 //const string FRAGMENT_SHADER_FILE = "cube_phong.frag";
 
 // Blinn-Phong lighting shader sources
-const string VERTEX_SHADER_FILE = "cube_phong.vert"; // The vertex shader is the same
-const string FRAGMENT_SHADER_FILE = "cube_blinn_phong.frag";
+//const string VERTEX_SHADER_FILE = "cube_blinn_phong.vert"; // The vertex shader is the same
+//const string FRAGMENT_SHADER_FILE = "cube_blinn_phong.frag";
+
+vector<string> VERTEX_SHADER_FILES{"cube_phong.vert", "cube_blinn_phong.vert" };
+vector<string> FRAGMENT_SHADER_FILES{ "cube_phong.frag", "cube_blinn_phong.frag" };
+vector<string> SHADER_PROGRAM_TYPE{"Phong", "Blinn-Phong"};
+int SHADER_PROGRAM_ID(0);
 
 void setup_cube() {
 
@@ -153,13 +160,12 @@ void setup_cube() {
 }
 
 void setup_mvp_matrices() {
-	//int model_mat_loc;
+	// The model matrix
 	shader_program.get_uniform_location("aModelMat", MODEL_MAT_LOC);
 	MODEL_MAT = Eigen::Matrix4f::Identity();//rotate_x(degree_to_radians(15.f));
 	glUniformMatrix4fv(MODEL_MAT_LOC, 1, GL_FALSE, MODEL_MAT.data());
 
 	// The viewing matrix
-	//int view_mat_loc;
 	shader_program.get_uniform_location("aViewMat", VIEW_MAT_LOC);
 	Eigen::Vector3f CAM_POS(0.f, 0.f, 25.f);
 	Eigen::Vector3f CAM_CENTER(0.f, 0.f, 0.f);
@@ -172,7 +178,6 @@ void setup_mvp_matrices() {
 	float aspect(float(WINDOW_WIDTH) / float(WINDOW_HEIGHT));
 	float z_near(0.01f), z_far(100.f);
 	PROJECTION_MAT = perspective(fovy_degree, aspect, z_near, z_far);
-	//int projection_mat_loc;
 	shader_program.get_uniform_location("aProjMat", PROJECTION_MAT_LOC);
 	glUniformMatrix4fv(PROJECTION_MAT_LOC, 1, GL_FALSE, PROJECTION_MAT.data());
 }
@@ -185,7 +190,7 @@ void update_fps_counter(GLFWwindow* pWindow) {
 		PREVIOUS_SECONDS = current_seconds;
 		char tmp[128];
 		double fps = double(FRAME_COUNT) / elapsed_seconds;
-		sprintf(tmp, "opengl@fps:%.2f", fps);
+		sprintf(tmp, "opengl-%s@fps:%.2f", SHADER_PROGRAM_TYPE[SHADER_PROGRAM_ID].c_str(), fps);
 		glfwSetWindowTitle(pWindow, tmp);
 		FRAME_COUNT = 0;
 	}
@@ -194,29 +199,32 @@ void update_fps_counter(GLFWwindow* pWindow) {
 
 void framebuffer_size_callback(GLFWwindow* pwindow, int width, int height) {
 	glViewport(0, 0, width, height);
-	Eigen::Matrix4f perspective_mat = perspective(60.f, float(width)/float(height), 0.01f, 100.f);
-	int projection_mat_loc;
-	shader_program.get_uniform_location("aProjMat", projection_mat_loc);
-	glUniformMatrix4fv(projection_mat_loc, 1, GL_FALSE, perspective_mat.data());
+	
+	// Update the projection matrix with new aspect ratio
+	PROJECTION_MAT = perspective(60.f, float(width)/float(height), 0.01f, 100.f);
+	shader_program.get_uniform_location("aProjMat", PROJECTION_MAT_LOC);
+	glUniformMatrix4fv(PROJECTION_MAT_LOC, 1, GL_FALSE, PROJECTION_MAT.data());
 }
 
 void glfw_error_callback(int error, const char* description) {
 	gl_log_err(GL_LOG_FILE, "GLFW ERROR: code %i msg: %s\n", error, description);
 }
 
+/* Callback for mouse buttons
+*/
 void glfw_mouse_button_callback(GLFWwindow* pwindow, int button, int action, int mods) {
 	// If the left button is pressed, record the current mouse position
 	if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
 		glfwGetCursorPos(pwindow, &LAST_MOUSE_POS_X, &LAST_MOUSE_POS_Y);
 		MOUSE_LEFT_BUTTON_DOWN = true;
-		//cout << "Left mouse button down...\n";
 	}
 	else if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE) {
 		MOUSE_LEFT_BUTTON_DOWN = false;
-		//cout << "Left mouse button release...\n";
 	}
 }
 
+/* Callback for mouse movement
+*/
 void glfw_cursor_position_callback(GLFWwindow* pwindow, double xpos, double ypos) {
 	if (MOUSE_LEFT_BUTTON_DOWN) {
 		double dx = xpos - LAST_MOUSE_POS_X;
@@ -234,6 +242,8 @@ void glfw_cursor_position_callback(GLFWwindow* pwindow, double xpos, double ypos
 	}
 }
 
+/* Callback for keyboard inputs.
+*/
 void processInput(GLFWwindow* pwindow) {
 	if (glfwGetKey(pwindow, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
 		glfwSetWindowShouldClose(pwindow, true);
@@ -252,10 +262,40 @@ void processInput(GLFWwindow* pwindow) {
 	else if (glfwGetKey(pwindow, GLFW_KEY_R) == GLFW_RELEASE && RELOAD_PROGRAM_KEY_PRESSED) {
 		RELOAD_PROGRAM_KEY_PRESSED = false;
 	}
+	else if (glfwGetKey(pwindow, GLFW_KEY_1) == GLFW_PRESS && !RELOAD_PROGRAM_KEY_1_PRESSED) {
+		RELOAD_PROGRAM_KEY_1_PRESSED = true;
+		SHADER_PROGRAM_ID = 0;
+		cout << "Loading shade program: " << SHADER_PROGRAM_TYPE[0] << endl;
+		if (shader_program.reload(VERTEX_SHADER_FILES[0], FRAGMENT_SHADER_FILES[0])) {
+			shader_program.use();
+			setup_mvp_matrices();
+		}
+	}
+	else if (glfwGetKey(pwindow, GLFW_KEY_1) == GLFW_RELEASE && RELOAD_PROGRAM_KEY_1_PRESSED) {
+		RELOAD_PROGRAM_KEY_1_PRESSED = false;
+	}
+	else if (glfwGetKey(pwindow, GLFW_KEY_2) == GLFW_PRESS && !RELOAD_PROGRAM_KEY_2_PRESSED) {
+		RELOAD_PROGRAM_KEY_2_PRESSED = true;
+		SHADER_PROGRAM_ID = 1;
+		cout << "Loading shade program: " << SHADER_PROGRAM_TYPE[1] << endl;
+		if (shader_program.reload(VERTEX_SHADER_FILES[1], FRAGMENT_SHADER_FILES[1])) {
+			shader_program.use();
+			setup_mvp_matrices();
+		}
+	}
+	else if (glfwGetKey(pwindow, GLFW_KEY_2) == GLFW_RELEASE && RELOAD_PROGRAM_KEY_2_PRESSED) {
+		RELOAD_PROGRAM_KEY_2_PRESSED = false;
+	}
 }
 
 
 int main() {
+
+	cout << "Keyboard interactions: \n";
+	cout << "	number 1-3: load different shader programs at runtime\n ";
+	cout << "	R/r: reload the current shader program at runtime\n";
+	cout << "	esc: exit the program\n";
+
 	// start the gl logger
 	if (!restart_gl_log(GL_LOG_FILE))
 		return 1;
@@ -293,8 +333,8 @@ int main() {
 	
 	/* Setup the shader program 
 	*/
-	shader_program.attach_vertex_shader(VERTEX_SHADER_FILE);
-	shader_program.attach_fragment_shader(FRAGMENT_SHADER_FILE);
+	shader_program.attach_vertex_shader(VERTEX_SHADER_FILES[0]);
+	shader_program.attach_fragment_shader(FRAGMENT_SHADER_FILES[0]);
 	shader_program.set_gl_logger_file_name(string(GL_LOG_FILE));
 	shader_program.link();
 	shader_program.use();
