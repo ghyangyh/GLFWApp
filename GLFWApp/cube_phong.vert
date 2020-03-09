@@ -18,7 +18,7 @@ void main()
 	cube_vertex_eye_space = vec3(aViewMat * aModelMat * vec4(aCubeVertexPos, 1.0));
 	
 	// transform the cube normal to the eye space
-	cube_normal_eye_space = vec3(transpose(inverse(aViewMat * aModelMat)) * vec4(aCubeVertexNormal, 0.0));
+	cube_normal_eye_space = normalize(vec3(transpose(inverse(aViewMat * aModelMat)) * vec4(aCubeVertexNormal, 0.0)));
 
 	// Model-View-Projection tranfomation, the position of each vertex
 	// is transformed to a canonical space
