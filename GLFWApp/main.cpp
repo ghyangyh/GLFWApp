@@ -14,6 +14,7 @@ using namespace std;
 #include "gl_logger.h"
 #include "transformation_3d.h"
 #include "gl_shader_program.h"
+#include "gl_sphere.h"
 
 static const char* GL_LOG_FILE = "gl_log.txt";
 static double PREVIOUS_SECONDS(0.0);
@@ -381,6 +382,8 @@ int main() {
 
 	glEnable(GL_DEPTH_TEST);
 
+	GLSphere a_sphere(8.f, 40, 40);
+
 	while (!glfwWindowShouldClose(p_window)) {
 
 		update_fps_counter(p_window);
@@ -393,9 +396,12 @@ int main() {
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		
-		glBindVertexArray(CUBE_VAO);
-		glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+		// draw the cube
+		/*glBindVertexArray(CUBE_VAO);
+		glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);*/
+
+		// draw the sphere
+		a_sphere.draw();
 
 		// process input
 		processInput(p_window);
