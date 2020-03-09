@@ -7,7 +7,7 @@ in vec3 cube_vertex_eye_space, cube_normal_eye_space;
 // Implementation of the Phong shading model 
 
 // specify a fixed-position point light source
-vec3 light_position_world_space = vec3(-6.0, 6.0, 6.0);
+vec3 light_position_world_space = vec3(-16.0, 16.0, 16.0);
 vec3 light_specular = vec3(1.0, 1.0, 1.0); // white specular
 vec3 light_diffuse = vec3(0.7, 0.7, 0.7); // dull white diffuse
 vec3 light_ambient = vec3(0.2, 0.2, 0.2); // grey ambient
@@ -16,7 +16,7 @@ vec3 light_ambient = vec3(0.2, 0.2, 0.2); // grey ambient
 vec3 ks = vec3(1.0, 1.0, 1.0); // fully reflect specular light
 vec3 kd = vec3(1.0, 0.5, 0.0); // orange diffuse reflectance color
 vec3 ka = vec3(1.0, 1.0, 1.0); //fully reflected ambient light
-float specular_exponent = 10.0; // the specular shiness
+float specular_exponent = 25.0; // the specular shiness
 
 out vec4 frag_color;
 
