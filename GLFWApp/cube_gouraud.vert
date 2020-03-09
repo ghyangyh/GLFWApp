@@ -10,7 +10,7 @@ uniform mat4 aProjMat;
 
 ///*** Implementation of the Gouraud Shading Model ***///
 // specify a fixed-position point light source in world space
-vec3 light_position = vec3(-6.0, 6.0, 6.0);
+vec3 light_position = vec3(-16.0, 16.0, 16.0);
 vec3 light_specular = vec3(1.0, 1.0, 1.0); // white specular
 vec3 light_diffuse = vec3(0.7, 0.7, 0.7); // dull white diffuse
 vec3 light_ambient = vec3(0.2, 0.2, 0.2); // grey ambient
@@ -19,7 +19,7 @@ vec3 light_ambient = vec3(0.2, 0.2, 0.2); // grey ambient
 vec3 ks = vec3(1.0, 1.0, 1.0); // fully reflect specular light
 vec3 kd = vec3(1.0, 0.5, 0.0); // orange diffuse reflectance color
 vec3 ka = vec3(1.0, 1.0, 1.0); //fully reflected ambient light
-float specular_exponent = 100.0; // the specular shiness
+float specular_exponent = 50.0; // the specular shiness
 
 // The virtual camera position
 uniform vec3 aCameraPos;
@@ -32,18 +32,22 @@ void main()
 	// Model-View-Projection tranfomation
 	// The position of each vertex is transformed into a canonical/clip space
 	gl_Position = aProjMat * aViewMat * aModelMat * vec4(aCubeVertexPos, 1.0);
+	
+	// Compute the position and normal after model transformation
+	vec3 a_position = vec3(aModelMat * vec4(aCubeVertexPos, 1.0));
+	vec3 a_normal = normalize(vec3(transpose(inverse(aModelMat)) * vec4(aCubeVertexNormal, 0.0)));
 
 	// Compute the ambient color
 	vec3 ambient_color = light_ambient * ka;
 
 	// Compute the diffuse color
-	vec3 light_dir = normalize(light_position - aCubeVertexPos);
-	float diffuse_dot_prod = max(dot(light_dir, aCubeVertexNormal), 0.0);
+	vec3 light_dir = normalize(light_position - a_position);
+	float diffuse_dot_prod = max(dot(light_dir, a_normal), 0.0);
 	vec3 diffuse_color = light_diffuse * kd * diffuse_dot_prod;
 
 	// Compute the specular color
-	vec3 reflect_dir = reflect(-light_dir, aCubeVertexNormal);
-	vec3 eye_dir = normalize(aCameraPos - aCubeVertexPos);
+	vec3 reflect_dir = reflect(-light_dir, a_normal);
+	vec3 eye_dir = normalize(aCameraPos - a_position);
 	float specular_dot_prod = max(dot(reflect_dir, eye_dir), 0.0);
 	float shiness = pow(specular_dot_prod, specular_exponent);
 	vec3 specular_color = light_specular * ks * shiness;
