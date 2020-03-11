@@ -15,6 +15,7 @@ using namespace std;
 #include "transformation_3d.h"
 #include "gl_shader_program.h"
 #include "gl_sphere.h"
+#include "gl_cube.h"
 
 static const char* GL_LOG_FILE = "gl_log.txt";
 static double PREVIOUS_SECONDS(0.0);
@@ -51,18 +52,7 @@ static bool RELOAD_PROGRAM_KEY_3_PRESSED(false);
 static int MODEL_MAT_LOC(-1), VIEW_MAT_LOC(-1), PROJECTION_MAT_LOC(-1);
 Eigen::Matrix4f MODEL_MAT, VIEW_MAT, PROJECTION_MAT;
 
-// Non-shaded shader sources
-//const string VERTEX_SHADER_FILE = "cube.vert";
-//const string FRAGMENT_SHADER_FILE = "cube.frag";
-
-// Phong lighting shader sources
-//const string VERTEX_SHADER_FILE = "cube_phong.vert";
-//const string FRAGMENT_SHADER_FILE = "cube_phong.frag";
-
-// Blinn-Phong lighting shader sources
-//const string VERTEX_SHADER_FILE = "cube_blinn_phong.vert"; // The vertex shader is the same
-//const string FRAGMENT_SHADER_FILE = "cube_blinn_phong.frag";
-
+// Various shading models
 vector<string> VERTEX_SHADER_FILES{"cube_phong.vert", "cube_blinn_phong.vert", "cube_gouraud.vert" };
 vector<string> FRAGMENT_SHADER_FILES{ "cube_phong.frag", "cube_blinn_phong.frag", "cube_gouraud.frag" };
 vector<string> SHADER_PROGRAM_TYPE{"Phong", "Blinn-Phong", "Gouraud"};
@@ -374,7 +364,8 @@ int main() {
 	
 	/* Setup the scene data
 	*/
-	setup_cube();
+	//setup_cube();
+	GLCube a_cube(10.f);
 
 	/* Setup the model, view and projection matrices
 	*/
@@ -382,6 +373,8 @@ int main() {
 
 	glEnable(GL_DEPTH_TEST);
 
+	/* Create a sphere
+	*/
 	GLSphere a_sphere(8.f, 40, 40);
 
 	while (!glfwWindowShouldClose(p_window)) {
@@ -399,9 +392,10 @@ int main() {
 		// draw the cube
 		/*glBindVertexArray(CUBE_VAO);
 		glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);*/
+		a_cube.draw();
 
 		// draw the sphere
-		a_sphere.draw();
+		//a_sphere.draw();
 
 		// process input
 		processInput(p_window);
