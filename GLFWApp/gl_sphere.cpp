@@ -21,7 +21,8 @@ GLSphere::GLSphere(float aRadius,
 	
 	// Trianglulation
 	fill_triangle_face_indices(aVerticalSlices, aHorizontalSlices);
-	cout << "Totoal triangles: " << m_triangle_face_indices.size() / 3 << endl;
+	cout << "Sphere vertices: " << m_triangle_face_indices.size() << endl;
+	cout << "Sphere triangles: " << m_triangle_face_indices.size() / 3 << endl;
 	// Setup the VAO, VBO and EAO
 	glGenVertexArrays(1, &m_vao);
 	glGenBuffers(1, &m_vbo);
@@ -38,9 +39,14 @@ GLSphere::GLSphere(float aRadius,
 	// Specify the position data
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, m_vertex_stride * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
+
 	// Specify the normal data
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, m_vertex_stride * sizeof(float), (void*)(3 * sizeof(float)));
 	glEnableVertexAttribArray(1);
+
+	// Specify the texture coordinates
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, m_vertex_stride * sizeof(float), (void*)(6 * sizeof(float)));
+	glEnableVertexAttribArray(2);
 
 	// Copy the triangle face indces data to OpenGL
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_eao);
@@ -62,11 +68,14 @@ void GLSphere::fill_vertex_attribute_array(float aRadius, int aVerticalSlices, i
 	int num_horizontal_samples = aHorizontalSlices;
 	
 	for (int i = 0; i <= num_vertical_samples; ++i) {
-		for (int j = 0; j < num_horizontal_samples; ++j) {
+		for (int j = 0; j <= num_horizontal_samples; ++j) {
 			// Compute x, y, z
-			m_vertex_atrribute_array.emplace_back(aRadius * sin(d_theta*i)*cos(d_phi*j));
-			m_vertex_atrribute_array.emplace_back(aRadius * cos(d_theta*i));
-			m_vertex_atrribute_array.emplace_back(aRadius * sin(d_theta*i)*sin(d_phi*j));
+			float x = aRadius * sin(d_theta*i)*cos(d_phi*j);
+			float y = aRadius * cos(d_theta*i);
+			float z = aRadius * sin(d_theta*i)*sin(d_phi*j);
+			m_vertex_atrribute_array.emplace_back(x);
+			m_vertex_atrribute_array.emplace_back(y);
+			m_vertex_atrribute_array.emplace_back(z);
 
 			// Compute nx, ny, nz
 			m_vertex_atrribute_array.emplace_back(sin(d_theta*i)*cos(d_phi*j));
@@ -74,8 +83,13 @@ void GLSphere::fill_vertex_attribute_array(float aRadius, int aVerticalSlices, i
 			m_vertex_atrribute_array.emplace_back(sin(d_theta*i)*sin(d_phi*j));
 			
 			// Compute s, t
-			m_vertex_atrribute_array.emplace_back(0.f);
-			m_vertex_atrribute_array.emplace_back(0.f);
+			/*float s = acos(y / aRadius) / PI;
+			float t = (PI + atan2f(z, x)) / (2 * PI);*/
+			float s = (d_phi * j) / (2 * PI);
+			float t = (d_theta*i) / PI;
+			//cout << "s = " << s << ", t = " << t << endl;
+			m_vertex_atrribute_array.emplace_back(s);
+			m_vertex_atrribute_array.emplace_back(t);
 
 		}
 	}

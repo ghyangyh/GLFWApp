@@ -3,8 +3,9 @@
 
 #include <vector>
 
-
-
+/* This class will generate a sphere and setup one OpenGL's vertex array object
+* to contain all vertices' attributes: x1,y1,z1,nx1,ny1,nz1,s1,t1,...
+*/
 class GLSphere {
 public:
 	GLSphere(float aRadius, int aVerticalSlices, int aHorizontalSlices);
