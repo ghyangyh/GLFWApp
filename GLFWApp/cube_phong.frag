@@ -2,6 +2,10 @@
 
 uniform mat4 aViewMat;
 
+// For texture mapping
+uniform sampler2D texture_sampler;
+in vec2 texture_coords;
+
 in vec3 cube_vertex_eye_space, cube_normal_eye_space;
 
 // Implementation of the Phong shading model 
@@ -51,7 +55,12 @@ void main()
 
 	// the final specular color
 	vec3 specular_color = light_specular * ks * shiness; 
+	
+	// Get the texture color
+	vec4 texture_color = texture(texture_sampler, texture_coords);
 
-	// The final fragment color
-	frag_color = vec4(ambient_color + diffuse_color + specular_color, 1.0);
+	// The final fragment color is a combination of the lighting color and 
+	// texture color.
+	vec4 lighting_color = vec4(ambient_color + diffuse_color + specular_color, 1.0);
+	frag_color = texture_color * lighting_color;
 }
