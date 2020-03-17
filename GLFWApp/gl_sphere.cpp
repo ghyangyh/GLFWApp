@@ -67,8 +67,22 @@ void GLSphere::fill_vertex_attribute_array(float aRadius, int aVerticalSlices, i
 	int num_vertical_samples = aVerticalSlices + 2;
 	int num_horizontal_samples = aHorizontalSlices;
 	
-	for (int i = 0; i <= num_vertical_samples; ++i) {
-		for (int j = 0; j <= num_horizontal_samples; ++j) {
+	// Create the north pole vertex
+	m_vertex_atrribute_array.emplace_back(0.f);
+	m_vertex_atrribute_array.emplace_back(aRadius);
+	m_vertex_atrribute_array.emplace_back(0.f);
+
+	// Compute nx, ny, nz
+	m_vertex_atrribute_array.emplace_back(0.f);
+	m_vertex_atrribute_array.emplace_back(1.0f);
+	m_vertex_atrribute_array.emplace_back(0.f);
+
+	// Compute s, t
+	m_vertex_atrribute_array.emplace_back(0.f);
+	m_vertex_atrribute_array.emplace_back(1.f);
+
+	for (int i = 1; i <= num_vertical_samples-1; ++i) {
+		for (int j = 0; j < num_horizontal_samples; ++j) {
 			// Compute x, y, z
 			float x = aRadius * sin(d_theta*i)*cos(d_phi*j);
 			float y = aRadius * cos(d_theta*i);
@@ -85,14 +99,26 @@ void GLSphere::fill_vertex_attribute_array(float aRadius, int aVerticalSlices, i
 			// Compute s, t
 			/*float s = acos(y / aRadius) / PI;
 			float t = (PI + atan2f(z, x)) / (2 * PI);*/
-			float s = (d_phi * j) / (2 * PI);
-			float t = (d_theta*i) / PI;
-			//cout << "s = " << s << ", t = " << t << endl;
+			float s = 1.f - (d_phi * j) / (2 * PI);
+			float t = 1.f - (d_theta*i) / PI;
 			m_vertex_atrribute_array.emplace_back(s);
 			m_vertex_atrribute_array.emplace_back(t);
 
 		}
 	}
+	// Create the south pole vertex
+	m_vertex_atrribute_array.emplace_back(0.f);
+	m_vertex_atrribute_array.emplace_back(-aRadius);
+	m_vertex_atrribute_array.emplace_back(0.f);
+
+	// Compute nx, ny, nz
+	m_vertex_atrribute_array.emplace_back(0.f);
+	m_vertex_atrribute_array.emplace_back(-1.f);
+	m_vertex_atrribute_array.emplace_back(0.f);
+
+	// Compute s, t
+	m_vertex_atrribute_array.emplace_back(0.f);
+	m_vertex_atrribute_array.emplace_back(0.f);
 }
 
 void GLSphere::fill_triangle_face_indices(int aVerticalSlices, int aHorizontalSlices) {
@@ -102,7 +128,7 @@ void GLSphere::fill_triangle_face_indices(int aVerticalSlices, int aHorizontalSl
 	int num_horizontal_samples = aHorizontalSlices;
 	// The strip containing the north pole
 	for (int i = 1; i < num_horizontal_samples; ++i) {
-		m_triangle_face_indices.emplace_back(0);
+		m_triangle_face_indices.emplace_back(0); // the pole vertex has index 0
 		m_triangle_face_indices.emplace_back(i);
 		m_triangle_face_indices.emplace_back(i + 1);
 	}
@@ -118,7 +144,7 @@ void GLSphere::fill_triangle_face_indices(int aVerticalSlices, int aHorizontalSl
 		next_circle_start_index = current_circle_start_index + num_horizontal_samples;
 		next_circle_stop_index = next_circle_start_index + num_horizontal_samples - 1;
 
-		// From the start to the stop: each time draw two tris
+		// From the start to the stop: each time draw two triangles
 		for (int k = current_circle_start_index; k < current_circle_stop_index; ++k) {
 			m_triangle_face_indices.emplace_back(k);
 			m_triangle_face_indices.emplace_back(k+ num_horizontal_samples);
@@ -129,7 +155,7 @@ void GLSphere::fill_triangle_face_indices(int aVerticalSlices, int aHorizontalSl
 			m_triangle_face_indices.emplace_back(k + 1);
 
 		}
-		//From the stop to start
+		//Joining the stop and start vertices to close the triangle strip
 		m_triangle_face_indices.emplace_back(current_circle_stop_index);
 		m_triangle_face_indices.emplace_back(next_circle_stop_index);
 		m_triangle_face_indices.emplace_back(next_circle_start_index);
