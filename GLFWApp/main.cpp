@@ -59,7 +59,7 @@ vector<string> FRAGMENT_SHADER_FILES{ "cube_phong.frag", "cube_blinn_phong.frag"
 vector<string> SHADER_PROGRAM_TYPE{"Phong", "Blinn-Phong", "Gouraud"};
 int SHADER_PROGRAM_ID(0);
 
-string texture_image("skulluvmap.png");
+string texture_image("world-physical-map.jpg");//skulluvmap.png,world.png, Brick.jpg,
 
 void setup_cube() {
 
@@ -369,10 +369,6 @@ int main() {
 	*/
 	//setup_cube();
 	GLCube a_cube(10.f);
-	
-	/*Setup the cube texture
-	*/
-	GLTexture a_texture(string(GL_LOG_FILE), texture_image, GL_TEXTURE0);
 
 	/* Setup the model, view and projection matrices
 	*/
@@ -384,7 +380,14 @@ int main() {
 	*/
 	GLSphere a_sphere(8.f, 40, 40);
 
+	/*Setup the textures
+	*/
+	GLTexture a_texture(string(GL_LOG_FILE), texture_image, GL_TEXTURE0);
 
+	// Set the front face to be clock wise
+	/*glFrontFace(GL_CW);
+	glCullFace(GL_BACK);*/
+	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 	while (!glfwWindowShouldClose(p_window)) {
 
@@ -401,10 +404,10 @@ int main() {
 		// draw the cube
 		/*glBindVertexArray(CUBE_VAO);
 		glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);*/
-		a_cube.draw();
+		//a_cube.draw();
 
 		// draw the sphere
-		//a_sphere.draw();
+		a_sphere.draw();
 
 		// process input
 		processInput(p_window);
